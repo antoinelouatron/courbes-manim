@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+
+<html lang="fr" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>construction_courbe &#8212; Documentation Courbes paramétrées en manim 0.3</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b3523f8e" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=3c051f90"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=d99ca74e"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Recherche" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Code source de construction_courbe</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module de base pour la construction de courbes paramétrée animée par manim.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">collections.abc</span>
+<span class="kn">from</span> <span class="nn">fractions</span> <span class="kn">import</span> <span class="n">Fraction</span>
+
+<span class="kn">import</span> <span class="nn">tex_commands</span> <span class="k">as</span> <span class="nn">tc</span>
+<span class="c1"># import logging_conf</span>
+
+<span class="kn">from</span> <span class="nn">manim</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="mf">0.3</span>
+
+
+<span class="c1"># pour l&#39;instant on utilise seulement print pour les log</span>
+<span class="k">def</span> <span class="nf">logger</span><span class="p">():</span>
+    <span class="k">pass</span>
+
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="nb">print</span>
+
+<div class="viewcode-block" id="Symetrie">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.Symetrie">[docs]</a>
+<span class="k">class</span> <span class="nc">Symetrie</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Les instances de cette classe représentent les éventuelles symétrie</span>
+<span class="sd">    de la courbe étudiée.</span>
+<span class="sd">    </span>
+<span class="sd">    :param transforme: est une fonction qui prend un paramètre t</span>
+<span class="sd">        et renvoie la valeur du paramètre du point symétrique.</span>
+<span class="sd">    :param sym_M: est une fonction qui prend un np.array de taille 3</span>
+<span class="sd">        et renvoie son symétrique sous forme de np.array</span>
+<span class="sd">    :param texte: est le texte à afficher comme paramètre pour</span>
+<span class="sd">        le symétrique de M(t). Peut contenir du Latex</span>
+<span class="sd">    :type texte: str</span>
+<span class="sd">    :param parametres: est une liste ou un tuple de deux paramètres (nombres)</span>
+<span class="sd">        à utiliser comme exemple pour afficher deux M(t) ainsi que leurs symétriques.</span>
+<span class="sd">    :param presentation: est un Text (ou Tex) de description du point symétrique.</span>
+<span class="sd">        Par exemple &quot;M(-t) = (-x(t), y(t))&quot;</span>
+<span class="sd">    :param conclusion: est un Text de conclusion sur la symétrie.</span>
+<span class="sd">        &quot;M(-t) est le symétrique de M(t) par rapport à (Oy)&quot;</span>
+<span class="sd">    :param intervalles: est une liste de 3 str contenant les intervalles :</span>
+<span class="sd">        complet, pour M(t), pour son symétrique. Le premier intervalle</span>
+<span class="sd">        n&#39;est pas utilisé pour l&#39;instant.</span>
+<span class="sd">    :param p_range: donne les bornes (nombres) de l&#39;intervalle réduit</span>
+<span class="sd">        pour le futur tracé. Séquence de longueur 2 qui prendra le pas sur</span>
+<span class="sd">        les paramètres donnés à :class:`PasAPas`.</span>
+<span class="sd">    :param couleur: (optionnel) est chaîne de couleur à utiliser pour le tracé</span>
+<span class="sd">        du morceau de courbe symétrique.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transforme</span><span class="p">,</span> <span class="n">sym_M</span><span class="p">,</span> <span class="n">texte</span><span class="p">,</span> <span class="n">parametres</span><span class="p">,</span>
+                 <span class="n">presentation</span><span class="p">,</span> <span class="n">conclusion</span><span class="p">,</span> <span class="n">intervalles</span><span class="p">,</span>
+                 <span class="n">p_range</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforme</span> <span class="o">=</span> <span class="n">transforme</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sym_M</span> <span class="o">=</span> <span class="n">sym_M</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texte</span> <span class="o">=</span> <span class="n">texte</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">parametres</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">presentation</span> <span class="o">=</span> <span class="n">presentation</span>  <span class="c1"># Un Text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conclusion</span> <span class="o">=</span> <span class="n">conclusion</span> <span class="c1"># un Text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intervalles</span> <span class="o">=</span> <span class="n">intervalles</span> <span class="c1"># 3 Text : complet, moitié1, moitié2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p_range</span> <span class="o">=</span> <span class="n">p_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">couleur</span> <span class="o">=</span> <span class="n">couleur</span>
+    
+    <span class="k">def</span> <span class="nf">anime_symetrie</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scene</span><span class="p">):</span>
+        <span class="c1"># scene est la scene de référence qui est une sous classe de PasAPas</span>
+        <span class="c1"># Fait bouger un point et son symétrique entre les deux paramètres</span>
+        <span class="c1"># passés à l&#39;initialisation</span>
+        <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">Dot</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">scene</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="n">scene</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="n">t1</span><span class="p">)))</span>
+        <span class="n">txt_M</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;M(t)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">UP</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">sym</span> <span class="o">=</span> <span class="n">Dot</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">scene</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">scene</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transforme</span><span class="p">(</span><span class="n">t1</span><span class="p">))</span>
+        <span class="p">))</span>
+        <span class="n">txt_sym</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;M(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">texte</span><span class="p">))</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">UP</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">GM</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">txt_M</span><span class="p">)</span>
+        <span class="n">Gsym</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">txt_sym</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">GM</span><span class="p">,</span> <span class="n">Gsym</span><span class="p">]</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">play</span><span class="p">(</span>
+            <span class="n">GM</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span> <span class="n">scene</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="n">scene</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="n">t2</span><span class="p">))</span> <span class="p">),</span>
+            <span class="n">Gsym</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span>
+                <span class="n">scene</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="n">scene</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transforme</span><span class="p">(</span><span class="n">t2</span><span class="p">))</span> <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">reduit_intervalle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scene</span><span class="p">):</span>
+        <span class="n">complet</span><span class="p">,</span> <span class="n">moitie1</span><span class="p">,</span> <span class="n">moitie2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervalles</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lorsque t parcourt </span><span class="si">{</span><span class="n">moitie1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">UP</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">RIGHT</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="n">t2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;M(t) décrit une partie de la courbe.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">t3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">texte</span><span class="si">}</span><span class="s2"> parcourt alors </span><span class="si">{</span><span class="n">moitie2</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">t4</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;et M(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">texte</span><span class="si">}</span><span class="s2">) décrit l&#39;autre partie&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">t3</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">t5</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;de la courbe.&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">t4</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">t3</span><span class="p">,</span> <span class="n">t4</span><span class="p">,</span> <span class="n">t5</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">3.5</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">Tex</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;On étudie la courbe sur </span><span class="si">{</span><span class="n">moitie1</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">UP</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">RIGHT</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">))</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">])</span>
+
+    
+<div class="viewcode-block" id="Symetrie.play">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.Symetrie.play">[docs]</a>
+    <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scene</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Présente la symétrie, anime un point et son symétrique,</span>
+<span class="sd">        puis conclue sur la symétrie trouvée.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">presentation</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">anime_symetrie</span><span class="p">(</span><span class="n">scene</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conclusion</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reduit_intervalle</span><span class="p">(</span><span class="n">scene</span><span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Tangente">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.Tangente">[docs]</a>
+<span class="k">class</span> <span class="nc">Tangente</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tangente à une courbe paramétrée, en un paramètre donné et</span>
+<span class="sd">    spécifiée par un vecteur directeur.</span>
+<span class="sd">    </span>
+<span class="sd">    :param param: la valeur du paramètre où la tangente est à placer.</span>
+<span class="sd">    :type param: float</span>
+<span class="sd">    :param vect: un vecteur numpy utilisé pour l&#39;affichage et le tracé</span>
+<span class="sd">        d&#39;un vecteur directeur de la tangente.</span>
+<span class="sd">    :param echelle: un facteur d&#39;échelle pour le tracé du vecteur directeur.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">vect</span><span class="p">,</span> <span class="n">echelle</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vect</span> <span class="o">=</span> <span class="n">vect</span> <span class="o">*</span> <span class="n">echelle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vect_affiche</span> <span class="o">=</span> <span class="n">vect</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">param</span>
+    
+    <span class="k">def</span> <span class="nf">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scene</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">joue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">):</span>
+        <span class="c1"># scene est une instance de PasAPas</span>
+        
+        <span class="k">if</span> <span class="n">point</span><span class="p">:</span>
+            <span class="n">pt_M</span> <span class="o">=</span> <span class="n">Dot</span><span class="p">(</span>
+                <span class="n">point</span><span class="o">=</span><span class="n">scene</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="n">scene</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">)),</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">couleur</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="n">scene</span><span class="o">.</span><span class="n">groupe_repere</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pt_M</span><span class="p">)</span>
+            <span class="n">scene</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pt_M</span><span class="p">)</span>
+        <span class="n">vect</span> <span class="o">=</span> <span class="n">Arrow</span><span class="p">(</span>
+            <span class="n">scene</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="n">scene</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">)),</span>
+            <span class="n">scene</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">))</span> <span class="o">+</span>  <span class="bp">self</span><span class="o">.</span><span class="n">vect</span><span class="p">),</span>
+            <span class="n">buff</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">couleur</span>
+        <span class="p">)</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">groupe_repere</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">vect</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">joue</span><span class="p">:</span>
+            <span class="n">scene</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">vect</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FadeIn</span><span class="p">(</span><span class="n">vect</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Tangente.symetrique">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.Tangente.symetrique">[docs]</a>
+    <span class="k">def</span> <span class="nf">symetrique</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sym</span><span class="p">:</span> <span class="n">Symetrie</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calcule l&#39;image de self par la symétrie donnée. Renvoie une Tangente</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Tangente</span><span class="p">(</span><span class="n">sym</span><span class="o">.</span><span class="n">transforme</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">),</span> <span class="n">sym</span><span class="o">.</span><span class="n">sym_M</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vect</span><span class="p">))</span></div>
+</div>
+
+        <span class="c1"># echelle 1</span>
+
+<div class="viewcode-block" id="TypePoint">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.TypePoint">[docs]</a>
+<span class="k">class</span> <span class="nc">TypePoint</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classe de base pour les points faisant l&#39;objet d&#39;une étude locale.</span>
+<span class="sd">    Ces classes sont utilisées pour l&#39;affichage.</span>
+
+<span class="sd">    Quatres instances sont fournies dans ce module :</span>
+<span class="sd">        - POINT_ORDINAIRE</span>
+<span class="sd">        - POINT_INFLEXION</span>
+<span class="sd">        - POINT_REBROUSSEMENT1</span>
+<span class="sd">        - POINT_REBROUSSEMENT2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">etiquette</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">etiquette</span> <span class="o">=</span> <span class="n">etiquette</span>
+    
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;p est </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2"> et q est </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s2">. Il s&#39;agit d&#39;un point </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">etiquette</span><span class="si">}</span><span class="s2">.&quot;</span></div>
+
+
+<span class="n">POINT_ORDINAIRE</span> <span class="o">=</span> <span class="n">TypePoint</span><span class="p">(</span><span class="s2">&quot;impair&quot;</span><span class="p">,</span> <span class="s2">&quot;paire&quot;</span><span class="p">,</span> <span class="s2">&quot;ordinaire&quot;</span><span class="p">)</span>
+<span class="n">POINT_INFLEXION</span> <span class="o">=</span> <span class="n">TypePoint</span><span class="p">(</span><span class="s2">&quot;impair&quot;</span><span class="p">,</span> <span class="s2">&quot;impair&quot;</span><span class="p">,</span> <span class="s2">&quot;d&#39;inflexion&quot;</span><span class="p">)</span>
+<span class="n">POINT_REBROUSSEMENT1</span> <span class="o">=</span> <span class="n">TypePoint</span><span class="p">(</span><span class="s2">&quot;pair&quot;</span><span class="p">,</span> <span class="s2">&quot;impair&quot;</span><span class="p">,</span> <span class="s2">&quot;de rebroussement de 1ère espèce&quot;</span><span class="p">)</span>
+<span class="n">POINT_REBROUSSEMENT2</span> <span class="o">=</span> <span class="n">TypePoint</span><span class="p">(</span><span class="s2">&quot;pair&quot;</span><span class="p">,</span> <span class="s2">&quot;pair&quot;</span><span class="p">,</span> <span class="s2">&quot;de rebroussement de 2ème espèce&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PointSingulier">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PointSingulier">[docs]</a>
+<span class="k">class</span> <span class="nc">PointSingulier</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Point faisant l&#39;objet d&#39;une étude locale.</span>
+
+<span class="sd">    :param txt_param: une chaîne représentant la valeur du paramètre.</span>
+<span class="sd">    :param tangente: la :class:`Tangente` à tracer</span>
+<span class="sd">    :param p:</span>
+<span class="sd">    :param q: les entiers déterminant le type du point</span>
+<span class="sd">    :param type_point: le :class:`TypePoint` après étude.</span>
+
+<span class="sd">    Les trois derniers arguments ne sont utilisés que pour l&#39;affichage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txt_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tangente</span><span class="p">:</span> <span class="n">Tangente</span><span class="p">,</span>
+                 <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">type_point</span><span class="p">:</span> <span class="n">TypePoint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">txt_param</span> <span class="o">=</span> <span class="n">txt_param</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tgte</span> <span class="o">=</span> <span class="n">tangente</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">type_point</span>
+    
+    <span class="k">def</span> <span class="nf">presente</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">textes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">textes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Le point de paramètre </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">txt_param</span><span class="si">}</span><span class="s2"> est singulier.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">textes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;On trouve $&quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span>
+                    <span class="n">tc</span><span class="o">.</span><span class="n">D</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;^</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Vect</span><span class="p">(</span><span class="s2">&quot;OM&quot;</span><span class="p">),</span>
+                    <span class="n">tc</span><span class="o">.</span><span class="n">D</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;t^</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">txt_param</span><span class="si">}</span><span class="s2">)=&quot;</span> <span class="o">+</span> 
+                <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tgte</span><span class="o">.</span><span class="n">vect_affiche</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span>
+                    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">ne &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Vect</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;$&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">textes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Étudions le point de paramètre </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">txt_param</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">textes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;On trouve $&quot;</span> <span class="o">+</span> 
+                <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">D</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Vect</span><span class="p">(</span><span class="s2">&quot;OM&quot;</span><span class="p">),</span> <span class="n">tc</span><span class="o">.</span><span class="n">D</span> <span class="o">+</span> <span class="s2">&quot;t&quot;</span><span class="p">)</span> <span class="o">+</span> 
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">txt_param</span><span class="si">}</span><span class="s2">)=&quot;</span> <span class="o">+</span> 
+                <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgte</span><span class="o">.</span><span class="n">vect_affiche</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span>
+                <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">ne &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Vect</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;$&quot;</span>
+            <span class="p">)</span>
+        <span class="n">textes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;De plus, $&quot;</span> <span class="o">+</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span>
+                <span class="n">tc</span><span class="o">.</span><span class="n">D</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;^</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Vect</span><span class="p">(</span><span class="s2">&quot;OM&quot;</span><span class="p">),</span>
+                <span class="n">tc</span><span class="o">.</span><span class="n">D</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;t^</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">txt_param</span><span class="si">}</span><span class="s2">)$ ne lui est pas colinéaire.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">textes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Au paramètre </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">txt_param</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">textes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;La tangente est dirigée par $&quot;</span> <span class="o">+</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgte</span><span class="o">.</span><span class="n">vect_affiche</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;$&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">textes</span>
+    
+    <span class="k">def</span> <span class="nf">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scene</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">joue</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tgte</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">scene</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">joue</span><span class="o">=</span><span class="n">joue</span><span class="p">)</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">Droite</span><span class="p">():</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">type_ligne</span><span class="o">=</span><span class="n">Line</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Equation est un triplet (a, b, c) avec (a, b) != (0, 0).</span>
+<span class="sd">        type_line est la classe à utiliser pour l&#39;affichage. Line ou hérité</span>
+
+<span class="sd">        La droite représentée est d&#39;équation ax + by + c = 0 </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equation</span> <span class="o">=</span> <span class="n">equation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type_ligne</span> <span class="o">=</span> <span class="n">type_ligne</span>
+    
+    <span class="k">def</span> <span class="nf">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repere</span><span class="p">:</span> <span class="n">CoordinateSystem</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trace dans les limites du repère donné</span>
+
+<span class="sd">        Retourne un objet manim Line (ou hérité) prêt à être affiché</span>
+<span class="sd">        ou None si aucun point de la droite n&#39;est affichable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equation</span>
+        <span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span> <span class="o">=</span> <span class="n">repere</span><span class="o">.</span><span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span> <span class="o">=</span> <span class="n">repere</span><span class="o">.</span><span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># cas particulier des droites verticales</span>
+        <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_y</span> <span class="ow">or</span> <span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_y</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">point1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">min_x</span><span class="p">,</span> <span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">point2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">max_x</span><span class="p">,</span> <span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># horizontales</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">a</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_x</span> <span class="ow">or</span> <span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">a</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_x</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">point1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">a</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">point2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">a</span><span class="p">,</span> <span class="n">max_y</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># cas général</span>
+            <span class="c1"># calcul des 4 points d&#39;intersection avec les droites délimitant</span>
+            <span class="c1"># notre repère affiché.</span>
+            <span class="c1"># On doit trouver 2 points d&#39;intersections convenables</span>
+            <span class="n">X_inter</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="n">b</span><span class="o">*</span><span class="n">min_y</span> <span class="o">-</span> <span class="n">c</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="n">b</span><span class="o">*</span><span class="n">max_y</span> <span class="o">-</span> <span class="n">c</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">]</span>
+            <span class="n">Y_inter</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">min_x</span> <span class="o">-</span> <span class="n">c</span><span class="p">)</span><span class="o">/</span><span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">c</span><span class="p">)</span><span class="o">/</span><span class="n">b</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span><span class="p">]</span>
+            <span class="n">convenables</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># liste des points d&#39;intersections dans le repère affiché</span>
+            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">X_inter</span><span class="p">,</span> <span class="n">Y_inter</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">min_x</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">max_x</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">min_y</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="n">max_y</span><span class="p">):</span>
+                    <span class="c1"># ce point d&#39;intersection est affichable</span>
+                    <span class="n">convenables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">convenables</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span> <span class="o">=</span> <span class="n">convenables</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_ligne</span><span class="p">(</span>
+            <span class="n">start</span><span class="o">=</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="n">point1</span><span class="p">),</span>
+            <span class="n">end</span><span class="o">=</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="n">point2</span><span class="p">),</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">couleur</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BrancheInfinie">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.BrancheInfinie">[docs]</a>
+<span class="k">class</span> <span class="nc">BrancheInfinie</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classe abstraite, de base pour toutes les branches infinies.</span>
+<span class="sd">    Donne l&#39;interface minimale</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nom</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nom</span> <span class="o">=</span> <span class="n">nom</span>
+    
+<div class="viewcode-block" id="BrancheInfinie.trace">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.BrancheInfinie.trace">[docs]</a>
+    <span class="k">def</span> <span class="nf">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retourne un object manim à tracer ou None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    <span class="k">def</span> <span class="nf">texte</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nom</span></div>
+
+
+<div class="viewcode-block" id="BrancheParabolique">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.BrancheParabolique">[docs]</a>
+<span class="k">class</span> <span class="nc">BrancheParabolique</span><span class="p">(</span><span class="n">BrancheInfinie</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pour l&#39;instant cette classe n&#39;est pas utilisée directement pour le tracé.</span>
+
+<span class="sd">    Elle peut servir de constructeur pour générer une chaîne de conclusion de</span>
+<span class="sd">    l&#39;étude.</span>
+
+<span class="sd">    :param axe: est une chaîne de caracté décrivant l&#39;axe de cette branche parabolique.</span>
+<span class="sd">        &quot;(Ox)&quot;, &quot;(Oy)&quot;, &quot;$D : y = \\alpha x$&quot; sont les valeurs attentues</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axe</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axe</span> <span class="o">=</span> <span class="n">axe</span> <span class="c1"># pour une éventuelle futur référence</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;branche parabolique d&#39;axe </span><span class="si">{</span><span class="n">axe</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="Asymptote">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.Asymptote">[docs]</a>
+<span class="k">class</span> <span class="nc">Asymptote</span><span class="p">(</span><span class="n">BrancheInfinie</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param equation: est un triplet (a, b, c) tel que l&#39;équation de</span>
+<span class="sd">        l&#39;asymptote est ax + by + c = 0, XOR une paire (a, b) telle que</span>
+<span class="sd">        l&#39;équation est y = ax+b</span>
+<span class="sd">    :type equation: tuple ou list</span>
+<span class="sd">    :param couleur: est optionnel et permet de choisir la couleur de tracé</span>
+<span class="sd">    :type couleur: str</span>
+
+<span class="sd">    Les nombres passés seront utilisés pour l&#39;affichage et le calcul.</span>
+<span class="sd">    Utiliser fractions.Fraction si nécessaire.</span>
+<span class="sd">    Dans certains cas, les nombres seront divisés les uns par les autres.</span>
+
+<span class="sd">    L&#39;équation sera affichée sous la forme y=ax+b ou x=c</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">equation</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">equation</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">equation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="n">equation</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="c1"># conversion des entiers en Fraction</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="n">Fraction</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">equation</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">droite</span> <span class="o">=</span> <span class="n">Droite</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="n">type_ligne</span><span class="o">=</span><span class="n">DashedLine</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">eqtion</span> <span class="o">=</span> <span class="s2">&quot;$y=</span><span class="si">{}</span><span class="s2">$&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_converti_nombre</span><span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="n">precision</span> <span class="o">=</span> <span class="s2">&quot; horizontale&quot;</span>
+        <span class="k">elif</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">eqtion</span> <span class="o">=</span>  <span class="s2">&quot;$x=</span><span class="si">{}</span><span class="s2">$&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_converti_nombre</span><span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">a</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="n">precision</span> <span class="o">=</span> <span class="s2">&quot; verticale&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">eqtion</span> <span class="o">=</span> <span class="s2">&quot;$y=</span><span class="si">{}</span><span class="s2">$&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_converti_nombre</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">/</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">signe</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span> <span class="k">if</span> <span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;-&quot;</span>
+                <span class="n">eqtion</span> <span class="o">=</span> <span class="s2">&quot;$y=</span><span class="si">{}{}{}</span><span class="s2">$&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_converti_nombre</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">/</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">),</span>
+                    <span class="n">signe</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_converti_nombre</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">precision</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">couleur</span> <span class="o">=</span> <span class="n">couleur</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;asymptote</span><span class="si">{</span><span class="n">precision</span><span class="si">}</span><span class="s2"> d&#39;équation </span><span class="si">{</span><span class="n">eqtion</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_converti_nombre</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nb</span><span class="p">,</span> <span class="n">chaine</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retourne une chaîne de caractère affichable pour représenter nb*chaine</span>
+
+<span class="sd">        Cette chaine devra être dans des délimiteur de math LaTeX</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">signe</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">nb</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">signe</span> <span class="o">=</span> <span class="s2">&quot;-&quot;</span>
+            <span class="n">nb</span> <span class="o">=</span> <span class="o">-</span><span class="n">nb</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">nb</span><span class="o">.</span><span class="n">numerator</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">chaine</span> <span class="ow">or</span> <span class="n">nb</span><span class="o">.</span><span class="n">numerator</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">numerator</span><span class="p">)</span> <span class="o">+</span> <span class="n">chaine</span>
+            <span class="k">if</span> <span class="n">nb</span><span class="o">.</span><span class="n">denominator</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">num</span>
+            <span class="k">return</span> <span class="n">signe</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">nb</span><span class="o">.</span><span class="n">denominator</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nb</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">signe</span> <span class="o">+</span> <span class="p">(</span><span class="n">chaine</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">nb</span><span class="p">))</span>
+            <span class="c1"># si la chaine est vide on retourne 1</span>
+        <span class="k">return</span> <span class="n">signe</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span> <span class="o">+</span> <span class="n">chaine</span>
+    
+<div class="viewcode-block" id="Asymptote.trace">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.Asymptote.trace">[docs]</a>
+    <span class="k">def</span> <span class="nf">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repere</span><span class="p">:</span> <span class="n">CoordinateSystem</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trace la droite asymptote dans les limites du repère fourni.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">couleur</span> <span class="o">=</span> <span class="n">couleur</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">couleur</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">droite</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">repere</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="n">couleur</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AsymptoteHorizontale">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.AsymptoteHorizontale">[docs]</a>
+<span class="k">class</span> <span class="nc">AsymptoteHorizontale</span><span class="p">(</span><span class="n">Asymptote</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Asymptote horizontale d&#39;équation y = c</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="n">c</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AsymptoteVerticale">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.AsymptoteVerticale">[docs]</a>
+<span class="k">class</span> <span class="nc">AsymptoteVerticale</span><span class="p">(</span><span class="n">Asymptote</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Asymptote verticale d&#39;équation x = c</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">c</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="PasAPas">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas">[docs]</a>
+<span class="k">class</span> <span class="nc">PasAPas</span><span class="p">(</span><span class="n">Scene</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classe de base à sous-classer pour obtenir une vidéo.</span>
+<span class="sd">    </span>
+<span class="sd">    En plus des méthodes, le comportement de cette classe est donné par</span>
+<span class="sd">    ses attributs de classe.</span>
+
+<span class="sd">    Gestion du repère et du tracé</span>
+<span class="sd">    -----------------------------</span>
+
+<span class="sd">    .. py:attribute:: X_RANGE</span>
+<span class="sd">        :type: tuple de longueur 2 ou 3</span>
+<span class="sd">        :value: (-1.2, 1.2, 1)</span>
+
+<span class="sd">        Extrémités de l&#39;axe des abscisses, plus un pas optionnel.</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: Y_RANGE</span>
+<span class="sd">        :type: tuple de longueur 2 ou 3</span>
+<span class="sd">        :value: (-1.2, 1.2, 1)</span>
+
+<span class="sd">        Extrémités de l&#39;axe des ordonnées, plus un pas optionnel.</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: P_RANGE</span>
+<span class="sd">        :type: tuple de longueur 2, ou liste de tels tuples</span>
+<span class="sd">        :value: None</span>
+
+<span class="sd">        Bornes de l&#39;intervalle de paramètres à utiliser pour le tracé.</span>
+<span class="sd">        Voir les discontinuités pour l&#39;utilisation d&#39;une liste.</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: DISCONTINUITES</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: None</span>
+
+<span class="sd">        Liste des paramètres où la courbe n&#39;est pas continue.</span>
+<span class="sd">        A utiliser en lien avec :attr:`DT`</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: DT</span>
+<span class="sd">        :type: float</span>
+<span class="sd">        :value: 1e-1</span>
+
+<span class="sd">        tolérance à gauche et à droite aux points de discontinuité.</span>
+<span class="sd">            Pour gérer les discontinuité nous avons 2 choix :</span>
+<span class="sd">            - Donner plusieurs intervalles de paramètres</span>
+<span class="sd">            - Utiliser :attr:`DISCONTINUITES` et :attr:`DT` comme</span>
+<span class="sd">            le fait manim de base. Ce rendu peut être non symétrique</span>
+<span class="sd">            et l&#39;animation peut varier en vitesse si les intervalles</span>
+<span class="sd">            de tracé ne sont pas de même longueur.</span>
+<span class="sd">    </span>
+<span class="sd">    Les étapes de la construction</span>
+<span class="sd">    -----------------------------</span>
+
+<span class="sd">    Explication d&#39;une construction de courbe</span>
+<span class="sd">    ........................................</span>
+<span class="sd">    L&#39;utilisation des attributs suivants est implémenté dans la méthode</span>
+<span class="sd">    :meth:`quelques_points`.</span>
+
+<span class="sd">    .. py:attribute:: PARAMS</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: []</span>
+
+<span class="sd">        Une liste de paramètres où afficher les points de la courbe,</span>
+<span class="sd">        ainsi que les points sur les axes correspondants.</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: TEXTES_POINTS</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: []</span>
+
+<span class="sd">        Une liste de même longueur que ::attr:`PARAMS` qui donne les</span>
+<span class="sd">        objets manim texte à afficher comme explication à droite du repère.</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: LEGENDES</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: []</span>
+
+<span class="sd">        Une liste de même longueur que ::attr:`PARAMS` qui contient des</span>
+<span class="sd">        dictionnaires dont les clées sont &quot;x&quot;, &quot;y&quot;, &quot;M&quot; et donne les</span>
+<span class="sd">        positions relatives des légendes pour les trois points placés</span>
+<span class="sd">        pour chaque paramètre.</span>
+<span class="sd">    </span>
+<span class="sd">    Les propriétés de la courbe</span>
+<span class="sd">    ...........................</span>
+
+<span class="sd">    .. py:attribute:: SYMETRIES</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: []</span>
+
+<span class="sd">        La liste des :py:class:`Symetrie` présentées par la courbe,</span>
+<span class="sd">        éventuellement vide.</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: POINTS_REGULIERS</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: []</span>
+<span class="sd">    </span>
+<span class="sd">        La liste de tuple (str, :class:`Tangente`) où on veut l&#39;étude</span>
+<span class="sd">        des tangentes, éventuellement vide. Le premier élément</span>
+<span class="sd">        est la chaîne représentant le paramètre.</span>
+
+<span class="sd">    .. py:attribute:: POINTS_SINGULIERS</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: []</span>
+
+<span class="sd">        La liste des :py:class:`PointSingulier` étudiés, éventuellement vide</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: ASYMPTOTES</span>
+<span class="sd">        :type: list</span>
+<span class="sd">        :value: []</span>
+
+<span class="sd">        La liste des :py:class:`ASYMPTOTES` que possède la courbe,</span>
+<span class="sd">        éventuellement vide.</span>
+<span class="sd">    </span>
+<span class="sd">    Gestion de la vidéo</span>
+<span class="sd">    ...................</span>
+
+<span class="sd">    .. py:attribute:: INTERVALLE_LEGENDE</span>
+<span class="sd">        :type: float</span>
+<span class="sd">        :value: 1.2</span>
+
+<span class="sd">        Temps en seconde à attendre avant de poursuivre l&#39;affichage.</span>
+
+<span class="sd">    .. py:attribute:: EPISODES</span>
+<span class="sd">        :type: bool</span>
+<span class="sd">        :value: True</span>
+
+<span class="sd">        Annonce ou non des parties de l&#39;étude sous forme d&#39;épisodes numérotés.</span>
+<span class="sd">    </span>
+<span class="sd">    .. py:attribute:: SKIP</span>
+<span class="sd">        :type: bool</span>
+<span class="sd">        :value: False</span>
+
+<span class="sd">        Ne génére pas la partie étude de courbe, mais seulement la partie tracé.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SKIP</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># devons nous passer directement au tracé</span>
+    <span class="n">TEXT_DROITE</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="n">UP</span> <span class="o">+</span> <span class="n">RIGHT</span><span class="p">)</span> <span class="c1"># décalage de base du texte pour la colonne de droite</span>
+    <span class="n">EPISODES</span>  <span class="o">=</span> <span class="kc">True</span> <span class="c1"># annonce des épisodes</span>
+    <span class="n">INTERVALLE_LEGENDE</span> <span class="o">=</span> <span class="mf">1.2</span> <span class="c1"># nombre de seconde entre l&#39;affichage d&#39;un texte et l&#39;affichage du prochain objet</span>
+    <span class="c1">#spécification du repère</span>
+    <span class="n">X_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">Y_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">X_LENGTH</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">Y_LENGTH</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="c1"># les paramètres qui seront passés à la fonction quelques_points.</span>
+    <span class="c1"># mettre des listes vides pour supprimer ce passage</span>
+    <span class="n">PARAMS</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># valeurs du paramètre</span>
+    <span class="n">LEGENDES</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#positions des légendes pour les points</span>
+    <span class="n">TEXTES_POINTS</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># textes affichés en haut</span>
+    <span class="c1"># présentation des symétries</span>
+    <span class="n">SYMETRIES</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># Une liste de Symetrie</span>
+    <span class="n">POINTS_REGULIERS</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># Une liste de</span>
+    <span class="c1"># (txt_parametre : str, Tangente)</span>
+    <span class="c1"># le vecteur numpy est utilisé pour l&#39;affichage d&#39;un texte,</span>
+    <span class="c1"># puis mis à l&#39;échelle pour afficher la flèche</span>
+    <span class="n">POINTS_SINGULIERS</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># Une liste de PointSingulier</span>
+    <span class="n">ASYMPOTES</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># une liste d&#39;Asymptote</span>
+    <span class="c1"># les 3 paramètre suivants controlent le tracé si aucune symétrie n&#39;est présente.</span>
+    <span class="n">P_RANGE</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># bornes (2-uple) de l&#39;intervalle de tracé ou listes de bornes</span>
+    <span class="c1"># Une troisième élément optionnel est une couleur de tracé</span>
+    <span class="n">DISCONTINUITES</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># liste des paramètres où la fonction n&#39;est pas continue</span>
+    <span class="n">DT</span> <span class="o">=</span> <span class="mf">1e-1</span> <span class="c1"># tolérance à gauche et à droite aux points de discontinuité</span>
+    <span class="c1"># Pour gérer les discontinuité nous avons 2 choix : </span>
+    <span class="c1"># - Donner plusieurs intervalles de paramètres</span>
+    <span class="c1"># - Utiliser DISCONTINUITES et DT comme le fait manim de base. Ce rendu peut être</span>
+    <span class="c1"># non symétrique et l&#39;animation peut varier en vitesse si les intervalles de tracé</span>
+    <span class="c1"># ne sont pas de même longueur</span>
+    
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textes_courrants</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span> <span class="o">=</span> <span class="n">Group</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_episode</span> <span class="o">=</span> <span class="mi">0</span>
+    
+<div class="viewcode-block" id="PasAPas.x">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.x">[docs]</a>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction abscisse.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> </div>
+
+
+<div class="viewcode-block" id="PasAPas.y">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.y">[docs]</a>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fonction ordonnée.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> </div>
+
+
+    <span class="k">def</span> <span class="nf">courbe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+            <span class="n">t</span><span class="o">-</span><span class="n">t</span><span class="p">,</span>
+        <span class="p">])</span>
+
+<div class="viewcode-block" id="PasAPas.efface_textes">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.efface_textes">[docs]</a>
+    <span class="k">def</span> <span class="nf">efface_textes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Efface tous les textes courrants.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># une animation pour tout effacer</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">textes_courrants</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span> <span class="k">for</span> <span class="n">txt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">textes_courrants</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textes_courrants</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.affiche_texte">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.affiche_texte">[docs]</a>
+    <span class="k">def</span> <span class="nf">affiche_texte</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">textes</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Affiche les textes passés en arguments. Attention à positionner les</span>
+<span class="sd">        textes au préalable.</span>
+
+<span class="sd">        :param remplace: si True (par défaut), commence par effacer les</span>
+<span class="sd">            textes déjà présents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">remplace</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">textes_courrants</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">textes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">textes_courrants</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">textes</span><span class="p">)</span>
+        <span class="c1"># affichage de tous les nouveaux textes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span> <span class="k">for</span> <span class="n">txt</span> <span class="ow">in</span> <span class="n">textes</span><span class="p">])</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.cache_repere">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.cache_repere">[docs]</a>
+    <span class="k">def</span> <span class="nf">cache_repere</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">joue</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cache le repère et la construction courrante.</span>
+
+<span class="sd">        :param joue: si True, joue l&#39;animation, sinon retourne l&#39;animation</span>
+<span class="sd">            prête à être jouée.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">joue</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeOut</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">FadeOut</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.affiche_repere">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.affiche_repere">[docs]</a>
+    <span class="k">def</span> <span class="nf">affiche_repere</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">joue</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Affiche le repère et la construction courrante.</span>
+
+<span class="sd">        :param joue: si True, joue l&#39;animation, sinon retourne l&#39;animation</span>
+<span class="sd">            prête à être jouée.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">joue</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">FadeIn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.annonce_episode">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.annonce_episode">[docs]</a>
+    <span class="k">def</span> <span class="nf">annonce_episode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">titre</span><span class="p">,</span> <span class="n">repere_fin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Annonce une séquence de la vidéo par un numéro + titre en plein écran.</span>
+
+<span class="sd">        Efface tous les textes courrants.</span>
+
+<span class="sd">        :param titre: le titre de l&#39;épisode</span>
+<span class="sd">        :param repere_fin: si vrai, affiche le repère à la fin de l&#39;annonce.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">numero</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_episode</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Épisode </span><span class="si">{</span><span class="n">numero</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_repere</span><span class="p">()</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Épisode </span><span class="si">{</span><span class="n">numero</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="p">)</span>
+        <span class="n">titre_txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="n">titre</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">num</span><span class="p">),</span> <span class="n">FadeIn</span><span class="p">(</span><span class="n">titre_txt</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">repere_fin</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span>
+                <span class="n">FadeOut</span><span class="p">(</span><span class="n">num</span><span class="p">),</span>
+                <span class="n">FadeOut</span><span class="p">(</span><span class="n">titre_txt</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">affiche_repere</span><span class="p">(</span><span class="n">joue</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">num</span><span class="p">),</span> <span class="n">FadeOut</span><span class="p">(</span><span class="n">titre_txt</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_episode</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+    
+    <span class="k">def</span> <span class="nf">intro</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">Text</span><span class="p">(</span><span class="s2">&quot;Étude et tracé d&#39;une courbe paramétrée&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PasAPas.quelques_points">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.quelques_points">[docs]</a>
+    <span class="k">def</span> <span class="nf">quelques_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametres</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">legendes</span><span class="p">,</span> <span class="n">textes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prend en argument :</span>
+<span class="sd">        une liste de paramètres des points à placer,</span>
+<span class="sd">        une liste de dictionnaires donnant les positions relatives des légendes : </span>
+<span class="sd">        {&#39;x&#39;: , &#39;y&#39;: , &#39;M&#39;: }</span>
+<span class="sd">        une liste optionnelle de textes à afficher avant de placer chaque point</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">textes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">parametres</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">textes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Le nombre de points à placer ne correspond pas au nombre de légendes&quot;</span>
+            <span class="p">)</span>
+        <span class="n">warn_gpe</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parametres</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">warn_txt</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span>
+                <span class="s2">&quot;Remarquer que la valeur du&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">RIGHT</span> <span class="o">+</span> <span class="n">UP</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">warn_gpe</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span>
+                <span class="n">warn_txt</span><span class="p">,</span>
+                <span class="n">Text</span><span class="p">(</span>
+                    <span class="s2">&quot;paramètre n&#39;apparaît pas&quot;</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">warn_txt</span><span class="p">,</span> <span class="n">DOWN</span><span class="o">*</span><span class="mf">0.25</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+                <span class="n">Text</span><span class="p">(</span>
+                    <span class="s2">&quot;directement sur le tracé.&quot;</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">warn_txt</span><span class="p">,</span> <span class="n">DOWN</span><span class="o">*</span><span class="mf">2.5</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">warn_gpe</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parametres</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">textes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">txt</span> <span class="o">=</span> <span class="n">textes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">px</span> <span class="o">=</span> <span class="n">Dot</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                    <span class="n">txt_x</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x(</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="n">legendes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;x&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">py</span> <span class="o">=</span> <span class="n">Dot</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">0</span><span class="p">))</span>
+                    <span class="n">txt_y</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y(</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">py</span><span class="p">,</span> <span class="n">legendes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;y&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">pM</span> <span class="o">=</span> <span class="n">Dot</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
+                    <span class="n">txt_M</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;M(</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">pM</span><span class="p">,</span> <span class="n">legendes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;M&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pM</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">txt_x</span><span class="p">,</span> <span class="n">txt_y</span><span class="p">,</span> <span class="n">txt_M</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">txt_x</span><span class="p">),</span> <span class="n">FadeOut</span><span class="p">(</span><span class="n">txt_y</span><span class="p">),</span> <span class="n">FadeOut</span><span class="p">(</span><span class="n">txt_M</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span>
+                        <span class="n">px</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="p">),</span>
+                        <span class="n">py</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="p">),</span>
+                        <span class="n">pM</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">txt_x</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x(</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="n">legendes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;x&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">txt_y</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y(</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">py</span><span class="p">,</span> <span class="n">legendes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;y&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">txt_M</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;M(</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">pM</span><span class="p">,</span> <span class="n">legendes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;M&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">txt_x</span><span class="p">,</span> <span class="n">txt_y</span><span class="p">,</span> <span class="n">txt_M</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pM</span><span class="p">,</span> <span class="n">txt_x</span><span class="p">,</span> <span class="n">txt_y</span><span class="p">,</span> <span class="n">txt_M</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">textes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">warn_gpe</span><span class="p">),</span> <span class="n">FadeOut</span><span class="p">(</span><span class="n">txt</span><span class="p">))</span>
+                <span class="c1"># méchant hack. il ne devrait pas y avoir d&#39;autres textes</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">textes_courrants</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">warn_gpe</span><span class="p">))</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.place_repere">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.place_repere">[docs]</a>
+    <span class="k">def</span> <span class="nf">place_repere</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construction et affichage du repère.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repere</span> <span class="o">=</span> <span class="n">Axes</span><span class="p">(</span>
+            <span class="c1"># x_min, x_max, pas</span>
+            <span class="n">x_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">X_RANGE</span><span class="p">,</span>
+            <span class="n">y_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Y_RANGE</span><span class="p">,</span>
+            <span class="n">x_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">X_LENGTH</span><span class="p">,</span>
+            <span class="n">y_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Y_LENGTH</span><span class="p">,</span>
+            <span class="n">axis_config</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;tip_width&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+                <span class="s2">&quot;tip_height&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+                <span class="s2">&quot;stroke_opacity&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">LEFT</span><span class="p">))</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.annonce_courbe">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.annonce_courbe">[docs]</a>
+    <span class="k">def</span> <span class="nf">annonce_courbe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Annonce de la courbe à tracer.</span>
+
+<span class="sd">        Utiliser de préférence pas méthode affiche_texte</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.symetries">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.symetries">[docs]</a>
+    <span class="k">def</span> <span class="nf">symetries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Présentation des symétries de la courbe</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_repere</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SYMETRIES</span><span class="p">:</span>
+            <span class="n">sym</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PasAPas.tableau_variations">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.tableau_variations">[docs]</a>
+    <span class="k">def</span> <span class="nf">tableau_variations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trace éventuellement un tableau de variations (avec ou sans texte). Fait</span>
+<span class="sd">        en plein écran.</span>
+
+<span class="sd">        Pour l&#39;annoncer par un épisode, utiliser self.annonce_episode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> </div>
+
+    
+    <span class="k">def</span> <span class="nf">points_reguliers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">POINTS_REGULIERS</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache_repere</span><span class="p">()</span>
+            <span class="n">txt1</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;S&#39;il est non nul, le vecteur $</span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">text</span><span class="si">{d}</span><span class="se">\\</span><span class="s2">overrightarrow</span><span class="si">{OM}</span><span class="s2">}{</span><span class="se">\\</span><span class="s2">text</span><span class="si">{d}</span><span class="s2">t}(t_0)$&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;dirige la tangente à l&#39;instant $t_0$.&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+            <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;Il s&#39;agit du vecteur vitesse instantanée.&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">txt2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">affiche_repere</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">txt_t0</span><span class="p">,</span> <span class="n">tgte</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">POINTS_REGULIERS</span><span class="p">:</span>
+            <span class="c1"># trace la tangente en M(t0), dirigée par v</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">tgte</span><span class="o">.</span><span class="n">param</span>
+            <span class="n">pt_M</span> <span class="o">=</span> <span class="n">Dot</span><span class="p">(</span>
+                <span class="n">point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="n">t0</span><span class="p">))</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="n">txt_M</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;M(</span><span class="si">{</span><span class="n">txt_t0</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">pt_M</span><span class="p">,</span> <span class="n">UP</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pt_M</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">pt_M</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">txt_M</span><span class="p">))</span>
+            <span class="n">lgd</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Au paramètre </span><span class="si">{</span><span class="n">txt_t0</span><span class="si">}</span><span class="s2">, la tangente&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+                <span class="n">lgd</span><span class="p">,</span>
+                <span class="n">Tex</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;est dirigée par $</span><span class="si">{</span><span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="n">tgte</span><span class="o">.</span><span class="n">vect_affiche</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span><span class="si">}</span><span class="s2">$&quot;</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">lgd</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">txt_M</span><span class="p">),</span> <span class="n">tgte</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">joue</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">points_singuliers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_repere</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ps</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">POINTS_SINGULIERS</span><span class="p">):</span>
+            <span class="n">textes</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">presente</span><span class="p">()</span>
+            <span class="n">txt_courrant</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="n">textes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">textes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="n">txt_courrant</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">affiche_repere</span><span class="p">()</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">joue</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">POINTS_SINGULIERS</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache_repere</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PasAPas.asymptotes">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.asymptotes">[docs]</a>
+    <span class="k">def</span> <span class="nf">asymptotes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trace les éventuelles asymptotes.</span>
+
+<span class="sd">        Pour montrer une étude de branche infinie, surcharger la méthode puis</span>
+<span class="sd">        finir par un appel a super().asymptotes()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s2">&quot;En image&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span> <span class="o">+</span> <span class="n">UP</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_repere</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">asymp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ASYMPOTES</span><span class="p">):</span>
+            <span class="n">ligne</span> <span class="o">=</span> <span class="n">asymp</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">debut</span> <span class="o">=</span> <span class="s2">&quot;Traçons&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">debut</span> <span class="o">=</span> <span class="s2">&quot;puis&quot;</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ASYMPOTES</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">fin</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fin</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span>
+            <span class="n">txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">debut</span><span class="si">}</span><span class="s2"> l&#39;</span><span class="si">{</span><span class="n">asymp</span><span class="o">.</span><span class="n">nom</span><span class="si">}{</span><span class="n">fin</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ligne</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">ligne</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PasAPas.variations">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.variations">[docs]</a>
+    <span class="k">def</span> <span class="nf">variations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A surcharger. Rappel ou annonce des variations dans la colonne de droite</span>
+<span class="sd">        juste avant le tracé.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_trace_morceau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_range</span><span class="p">,</span> <span class="n">transforme</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_range</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span> <span class="c1"># couleur fournie dans l&#39;intervalle</span>
+            <span class="c1"># celle-ci prend le pas sur l&#39;argument optionnel.</span>
+            <span class="n">couleur</span> <span class="o">=</span> <span class="n">p_range</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">p_range</span> <span class="o">=</span> <span class="n">p_range</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">courbe</span> <span class="o">=</span> <span class="n">ParametricFunction</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">coords_to_point</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">courbe</span><span class="p">(</span><span class="n">transforme</span><span class="p">(</span><span class="n">t</span><span class="p">))),</span>
+            <span class="n">t_range</span><span class="o">=</span><span class="n">p_range</span><span class="p">,</span>
+            <span class="n">use_vectorized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">discontinuities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DISCONTINUITES</span><span class="p">,</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DT</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">couleur</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">Create</span><span class="p">(</span><span class="n">courbe</span><span class="p">,</span> <span class="n">run_time</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">courbe</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">trace_complet</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">txt_courrant</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;On obtient finalement le tracé&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SYMETRIES</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
+                <span class="c1"># on a donné une liste d&#39;intervalles</span>
+                <span class="k">for</span> <span class="n">p_range</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">P_RANGE</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_trace_morceau</span><span class="p">(</span><span class="n">p_range</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_trace_morceau</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P_RANGE</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tangentes_supp</span> <span class="o">=</span> <span class="p">[(</span><span class="kc">None</span><span class="p">,</span> <span class="n">ps</span><span class="o">.</span><span class="n">tgte</span><span class="p">)</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">POINTS_SINGULIERS</span><span class="p">]</span>
+            <span class="c1"># tangentes placées par symétrie, dont il faut caluler</span>
+            <span class="c1"># des autres symétriques éventuels.</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sym</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SYMETRIES</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">txt_courrant</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;d&#39;abord sur l&#39;intervalle </span><span class="si">{</span><span class="n">sym</span><span class="o">.</span><span class="n">intervalles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">,&quot;</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_trace_morceau</span><span class="p">(</span><span class="n">sym</span><span class="o">.</span><span class="n">p_range</span><span class="p">)</span>
+                <span class="n">fin</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SYMETRIES</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;.&quot;</span>
+                <span class="n">txt_courrant</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;puis sur </span><span class="si">{</span><span class="n">sym</span><span class="o">.</span><span class="n">intervalles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> en traçant les M(</span><span class="si">{</span><span class="n">sym</span><span class="o">.</span><span class="n">texte</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="o">+</span> <span class="n">fin</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">sym</span><span class="o">.</span><span class="n">couleur</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt_courrant</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="c1"># tangentes symétriques</span>
+                <span class="n">tgtes</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="p">,</span> <span class="n">tgte</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">POINTS_REGULIERS</span> <span class="o">+</span> <span class="n">tangentes_supp</span><span class="p">:</span>
+                    <span class="c1"># trace la tangente en M(t0), dirigée par v</span>
+                    <span class="n">tgte_sym</span> <span class="o">=</span> <span class="n">tgte</span><span class="o">.</span><span class="n">symetrique</span><span class="p">(</span><span class="n">sym</span><span class="p">)</span>
+                    <span class="n">tgte_sym</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">couleur</span><span class="o">=</span><span class="n">sym</span><span class="o">.</span><span class="n">couleur</span><span class="p">)</span>
+                    <span class="n">tgtes</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="kc">None</span><span class="p">,</span> <span class="n">tgte_sym</span><span class="p">])</span>
+                <span class="n">tangentes_supp</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tgtes</span><span class="p">)</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">_trace_morceau</span><span class="p">(</span>
+                    <span class="n">sym</span><span class="o">.</span><span class="n">p_range</span><span class="p">,</span>
+                    <span class="n">transforme</span><span class="o">=</span><span class="n">sym</span><span class="o">.</span><span class="n">transforme</span><span class="p">,</span>
+                    <span class="n">couleur</span><span class="o">=</span><span class="n">sym</span><span class="o">.</span><span class="n">couleur</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">RIGHT</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">about_point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">c2p</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groupe_repere</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="PasAPas.construct">
+<a class="viewcode-back" href="../construction_courbe.html#construction_courbe.PasAPas.construct">[docs]</a>
+    <span class="k">def</span> <span class="nf">construct</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enchaîne les appels à toutes les méthodes précédentes.</span>
+
+<span class="sd">        Si `self.SKIP` est vrai, se contente de tracer la courbe</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">SKIP</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Intro&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">intro</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Quelques points&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PARAMS</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">annonce_episode</span><span class="p">(</span><span class="s2">&quot;Placer un point d&#39;une courbe&quot;</span><span class="p">,</span> <span class="n">repere_fin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">place_repere</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">quelques_points</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">PARAMS</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">LEGENDES</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">TEXTES_POINTS</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_num_episode</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Annonce courbe&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Repère : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span><span class="p">)</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">annonce_episode</span><span class="p">(</span>
+                <span class="s2">&quot;La courbe à étudier&quot;</span><span class="p">,</span> <span class="n">repere_fin</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PARAMS</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Repère : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span><span class="p">)</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PARAMS</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">place_repere</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">annonce_courbe</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Repère : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere_affiche</span><span class="p">)</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Symetries&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symetries</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tableau_variations</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">POINTS_REGULIERS</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">annonce_episode</span><span class="p">(</span>
+                    <span class="s2">&quot;Étude de quelques points réguliers&quot;</span><span class="p">,</span>
+                    <span class="n">repere_fin</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Points reguliers&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points_reguliers</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">POINTS_SINGULIERS</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">pluriel</span> <span class="o">=</span> <span class="s2">&quot;s&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">POINTS_SINGULIERS</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">annonce_episode</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Étude locale</span><span class="si">{</span><span class="n">pluriel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">repere_fin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Points singuliers&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points_singuliers</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ASYMPOTES</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">pluriel</span> <span class="o">=</span> <span class="s2">&quot;s&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ASYMPOTES</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">annonce_episode</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Étude de</span><span class="si">{</span><span class="n">pluriel</span><span class="si">}</span><span class="s2"> branche</span><span class="si">{</span><span class="n">pluriel</span><span class="si">}</span><span class="s2"> infinie</span><span class="si">{</span><span class="n">pluriel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">repere_fin</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Asymptotes&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">asymptotes</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">annonce_episode</span><span class="p">(</span><span class="s2">&quot;Tracé&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;(Rappels) variations&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variations</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_section</span><span class="p">(</span><span class="s2">&quot;Tracé&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">place_repere</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repere</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">LEFT</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace_complet</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Courbes paramétrées en manim</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../demarage.html">Construction de courbes paramétrées avec manim.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../construction_courbe.html">Le module principal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Index des modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exemples.html">Exemples commentés</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tex_commands.html">Commandes LaTeX</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Code du module</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Recherche rapide</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Antoine Louatron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

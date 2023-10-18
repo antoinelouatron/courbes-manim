@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html lang="fr" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tex_commands &#8212; Documentation Courbes paramétrées en manim 0.3</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b3523f8e" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=3c051f90"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=d99ca74e"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Recherche" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Code source de tex_commands</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Les classes de ce modules sont quelques utilitaires pour afficher plus facilement</span>
+<span class="sd">du LaTeX avec manim.</span>
+
+
+<span class="sd">La première classe est MyTex qui premet d&#39;ajouter facilement des packages pour la</span>
+<span class="sd">compilation et de choisir le compilateur latex a utiliser (lualatex par défaut).</span>
+
+<span class="sd">Viennent ensuite les classes Command et Env qui permettent de créer des fonctions</span>
+<span class="sd">retournant les commandes ou environnements voulus.</span>
+
+<span class="sd">Matrix est un raccourci pratique pour Env(&quot;pmatrix&quot;). La fonction Matrix prend </span>
+<span class="sd">une liste ou une liste de liste comme argument.</span>
+
+<span class="sd">Les commandes déjà créées pour l&#39;instant sont :</span>
+<span class="sd">    - `Frac` : comme en latex, mais avec un majuscule :)</span>
+<span class="sd">    - `Vect` : ajoute une flèche au dessus de son argument</span>
+<span class="sd">    - `Tend` : fonction à 2 paramètres retournant \\underset{#1 \\to #2}{\\to}</span>
+
+<span class="sd">D est un raccourci pour \\text{d}. Utile pour les notations physique de dérivation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">typing</span>
+
+<span class="kn">import</span> <span class="nn">manim</span>
+<span class="kn">from</span> <span class="nn">manim.mobject.opengl.opengl_compatibility</span> <span class="kn">import</span> <span class="n">ConvertToOpenGL</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="ExtendPackageMetaclass">
+<a class="viewcode-back" href="../tex_commands.html#tex_commands.ExtendPackageMetaclass">[docs]</a>
+<span class="k">class</span> <span class="nc">ExtendPackageMetaclass</span><span class="p">(</span><span class="n">ConvertToOpenGL</span><span class="p">):</span> <span class="c1"># TODO metaclass conflict</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Metaclass pour les classes définissant un attribut de classe &quot;packages&quot;.</span>
+
+<span class="sd">    Les classes filles peuvent ajouter de nouveaux packages à charger dans le préambule de</span>
+<span class="sd">    chaque compilation latex.</span>
+
+<span class="sd">    Pour toute utilisation, hériter de MyTex ou définir les attributs de classe</span>
+<span class="sd">    - tex_compiler</span>
+<span class="sd">    - package_command</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
+        <span class="c1"># récupération des packages définis dans les classes parents</span>
+        <span class="c1"># L&#39;ordre d&#39;apparition sera le même que l&#39;ordre d&#39;héritage</span>
+        <span class="n">packages_herites</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">bases</span><span class="p">:</span>
+            <span class="n">packages_herites</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+
+        <span class="n">nouveaux_packages</span> <span class="o">=</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="c1"># on converti les packages donnés en dictionnaires qui conservent l&#39;ordre</span>
+        <span class="c1"># mais préservent l&#39;unicité</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nouveaux_packages</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">nouveaux_packages</span> <span class="o">=</span> <span class="p">{</span><span class="n">e</span><span class="p">:</span> <span class="kc">True</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">nouveaux_packages</span><span class="p">}</span>
+        <span class="n">packages_herites</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">nouveaux_packages</span><span class="p">)</span>
+        <span class="n">dictionary</span><span class="p">[</span><span class="s2">&quot;packages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">packages_herites</span>
+
+        <span class="n">nouvelle_cls</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">)</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;\</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nouvelle_cls</span><span class="o">.</span><span class="n">package_command</span><span class="p">,</span> <span class="n">pack</span><span class="p">)</span> <span class="k">for</span> <span class="n">pack</span> <span class="ow">in</span> <span class="n">packages_herites</span><span class="p">]</span>
+        <span class="n">preamble</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="n">manim</span><span class="o">.</span><span class="n">TexTemplate</span><span class="p">(</span>
+            <span class="n">tex_compiler</span><span class="o">=</span><span class="n">nouvelle_cls</span><span class="o">.</span><span class="n">tex_compiler</span><span class="p">,</span>
+            <span class="n">preamble</span><span class="o">=</span><span class="n">preamble</span>
+        <span class="p">)</span>
+        <span class="n">nouvelle_cls</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">template</span>
+        <span class="k">return</span> <span class="n">nouvelle_cls</span></div>
+
+
+<div class="viewcode-block" id="MyTex">
+<a class="viewcode-back" href="../tex_commands.html#tex_commands.MyTex">[docs]</a>
+<span class="k">class</span> <span class="nc">MyTex</span><span class="p">(</span><span class="n">manim</span><span class="o">.</span><span class="n">Tex</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ExtendPackageMetaclass</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classe de base pour importer d&#39;autres packages lors de la compilation latex.</span>
+
+<span class="sd">    Les classes filles peuvent surcharger les attributs de classe:</span>
+<span class="sd">        - tex_compiler : la commande latex à invoquer</span>
+<span class="sd">        - package_command : usepackage ou RequirePackage suivant les goûts</span>
+<span class="sd">        - packages : l&#39;utilisation est plus délicates. Les packages de base sont</span>
+<span class="sd">            babel (en français), amsmath et amssymb.</span>
+<span class="sd">    </span>
+<span class="sd">    Si une classe fille surcharge cet attribut</span>
+<span class="sd">    les packages seront ajoutés à cette liste, dans l&#39;ordre d&#39;ajout</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">packages</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;[french]</span><span class="si">{babel}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;</span><span class="si">{amsmath}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;</span><span class="si">{amssymb}</span><span class="s2">&quot;</span>
+    <span class="p">]</span>
+    <span class="n">tex_compiler</span> <span class="o">=</span> <span class="s2">&quot;lualatex&quot;</span>
+    <span class="n">package_command</span> <span class="o">=</span> <span class="s2">&quot;usepackage&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">tex_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Command">
+<a class="viewcode-back" href="../tex_commands.html#tex_commands.Command">[docs]</a>
+<span class="k">class</span> <span class="nc">Command</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Crée une fonction prennant une nombre arbitraire d&#39;arguments er retournant la</span>
+<span class="sd">    chaine &quot;\\name{arg1}{arg2}...&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nom</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nom</span> <span class="o">=</span> <span class="n">nom</span> <span class="c1"># nom de la commande</span>
+    
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nom</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="p">[</span><span class="n">base</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">buff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Env">
+<a class="viewcode-back" href="../tex_commands.html#tex_commands.Env">[docs]</a>
+<span class="k">class</span> <span class="nc">Env</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Crée une fonction dont le nom est donné à l&#39;initialisation de l&#39;instance</span>
+<span class="sd">    et qui prend comme argument le contenu d&#39;un environnement.</span>
+
+<span class="sd">    Cette fonction ajoute begin/end autour du contenu qui doit être une chaîne.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nom</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nom</span> <span class="o">=</span> <span class="n">nom</span> <span class="c1"># nom de la commande</span>
+    
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contenu</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">debut</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">begin</span><span class="se">{{</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nom</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span>
+        <span class="n">fin</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">end</span><span class="se">{{</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nom</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="p">[</span><span class="n">debut</span><span class="p">,</span> <span class="n">contenu</span><span class="p">,</span> <span class="n">fin</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span></div>
+
+
+<span class="c1"># direction par défaut pour une matrice donnée par une seule liste</span>
+<span class="n">COL</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">LIGNE</span> <span class="o">=</span> <span class="mi">10</span>
+
+<div class="viewcode-block" id="Matrix">
+<a class="viewcode-back" href="../tex_commands.html#tex_commands.Matrix">[docs]</a>
+<span class="k">def</span> <span class="nf">Matrix</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="n">COL</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param data: Si une liste simple est donnée, elle sera interprété comme </span>
+<span class="sd">        une ligne ou une colonne suivant la valeur de</span>
+<span class="sd">    :param direction: la direction pour interpréter une liste simple.</span>
+<span class="sd">        peut prendre les valeurs COL ou LIGNE </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">np_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">np_data</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="n">COL</span><span class="p">:</span>
+        <span class="c1"># conversion en matrice colonne</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[[</span><span class="n">e</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">]</span>
+    <span class="n">lignes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot; &amp; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ligne</span><span class="p">)</span> <span class="k">for</span> <span class="n">ligne</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">begin</span><span class="si">{pmatrix}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lignes</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">end</span><span class="si">{pmatrix}</span><span class="s2">&quot;</span></div>
+
+
+
+<span class="n">Frac</span> <span class="o">=</span> <span class="n">Command</span><span class="p">(</span><span class="s2">&quot;frac&quot;</span><span class="p">)</span>
+<span class="n">Vect</span> <span class="o">=</span> <span class="n">Command</span><span class="p">(</span><span class="s2">&quot;overrightarrow&quot;</span><span class="p">)</span>
+<span class="c1">#préparation de Tend</span>
+<span class="n">_Tend</span> <span class="o">=</span> <span class="n">Command</span><span class="p">(</span><span class="s2">&quot;underset&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">Tend</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">lim</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_Tend</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> </span><span class="se">\\</span><span class="s2">to </span><span class="si">{</span><span class="n">lim</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">to&quot;</span><span class="p">)</span>
+<span class="c1"># D est une chaîne constante</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">Command</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)(</span><span class="s2">&quot;d&quot;</span><span class="p">)</span>
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Courbes paramétrées en manim</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../demarage.html">Construction de courbes paramétrées avec manim.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../construction_courbe.html">Le module principal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Index des modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exemples.html">Exemples commentés</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tex_commands.html">Commandes LaTeX</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Code du module</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Recherche rapide</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Antoine Louatron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

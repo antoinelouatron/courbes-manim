@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="fr" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astroide &#8212; Documentation Courbes paramétrées en manim 0.3</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b3523f8e" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=3c051f90"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=d99ca74e"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Recherche" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Code source de astroide</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">manim</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">import</span> <span class="nn">construction_courbe</span> <span class="k">as</span> <span class="nn">cc</span>
+<span class="kn">import</span> <span class="nn">tex_commands</span> <span class="k">as</span> <span class="nn">tc</span>
+
+<span class="c1"># deux chaînes utiles pour la suite, utilisées dans des</span>
+<span class="c1"># f-string</span>
+<span class="n">PI_2</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">pi&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">PI_4</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">pi&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Astroide">
+<a class="viewcode-back" href="../astroide.html#astroide.Astroide">[docs]</a>
+<span class="k">class</span> <span class="nc">Astroide</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="p">):</span>
+
+    <span class="n">INTERVALLE_LEGENDE</span> <span class="o">=</span> <span class="mf">1.4</span>
+    <span class="n">PARAMS</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># valeurs du paramètre</span>
+    <span class="n">LEGENDES</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#positions des légendes pour les points</span>
+    <span class="n">TEXTES_POINTS</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># textes affichés en haut</span>
+    <span class="c1"># présentation des symétries</span>
+    <span class="n">SYMETRIES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">Symetrie</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="o">-</span><span class="n">t</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">]),</span>
+            <span class="s2">&quot;-t&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;On a $M(-t) = &quot;</span><span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s2">&quot;x(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;-y(t)&quot;</span><span class="p">])</span> <span class="o">+</span><span class="s2">&quot;$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;M(-t) est le symétrique de M(t) par rapport à (Ox)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="p">[</span><span class="s2">&quot;$[-</span><span class="se">\\</span><span class="s2">pi, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">,</span> <span class="s2">&quot;$[0, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">,</span> <span class="s2">&quot;$[-</span><span class="se">\\</span><span class="s2">pi, 0]$&quot;</span><span class="p">],</span>
+            <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="c1"># p_range</span>
+            <span class="n">couleur</span><span class="o">=</span><span class="n">BLUE</span>
+        <span class="p">),</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">Symetrie</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">t</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">]),</span>
+            <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">pi-t$&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;On a $M(</span><span class="se">\\</span><span class="s2">pi-t) = &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s2">&quot;-x(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;y(t)&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;$M(</span><span class="se">\\</span><span class="s2">pi-t)$ est le symétrique de M(t)</span><span class="se">\\\\</span><span class="s2"> par rapport à (Oy)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span> <span class="o">+</span> <span class="n">LEFT</span><span class="o">*</span><span class="mf">0.3</span><span class="p">),</span>
+            <span class="p">[</span><span class="s2">&quot;$[0, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;$[0, </span><span class="si">{</span><span class="n">PI_2</span><span class="si">}</span><span class="s2">]$&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;$[</span><span class="si">{</span><span class="n">PI_2</span><span class="si">}</span><span class="s2">, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">],</span>
+            <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span>
+            <span class="n">couleur</span><span class="o">=</span><span class="n">ORANGE</span>
+        <span class="p">),</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">Symetrie</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">t</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">]),</span>
+            <span class="sa">f</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">PI_2</span><span class="si">}</span><span class="s2">-t$&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;On a $M(</span><span class="si">{</span><span class="n">PI_2</span><span class="si">}</span><span class="s2">-t) = &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s2">&quot;y(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;x(t)&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$M(</span><span class="si">{</span><span class="n">PI_2</span><span class="si">}</span><span class="s2"> - t)$ est le symétrique de M(t)</span><span class="se">\\\\</span><span class="s2"> par rapport à $D : y = x$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;$[0, </span><span class="si">{</span><span class="n">PI_2</span><span class="si">}</span><span class="s2">]$&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;$[0, </span><span class="si">{</span><span class="n">PI_4</span><span class="si">}</span><span class="s2">]$&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;$[</span><span class="si">{</span><span class="n">PI_4</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">PI_2</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">],</span>
+            <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">),</span>
+            <span class="n">couleur</span><span class="o">=</span><span class="n">GREEN</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">POINTS_REGULIERS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">PI_4</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">,</span>
+            <span class="n">cc</span><span class="o">.</span><span class="n">Tangente</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+                <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">POINTS_SINGULIERS</span> <span class="o">=</span> <span class="p">[</span> <span class="c1"># étude d&#39;un point singulier</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">PointSingulier</span><span class="p">(</span>
+            <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="c1"># en 0</span>
+            <span class="n">cc</span><span class="o">.</span><span class="n">Tangente</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="mi">15</span><span class="p">),</span>
+            <span class="mi">2</span><span class="p">,</span> <span class="c1"># p = 2</span>
+            <span class="mi">3</span><span class="p">,</span> <span class="c1"># q = 3</span>
+            <span class="n">cc</span><span class="o">.</span><span class="n">POINT_REBROUSSEMENT1</span> <span class="c1"># type du point</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+
+<div class="viewcode-block" id="Astroide.x">
+<a class="viewcode-back" href="../astroide.html#astroide.Astroide.x">[docs]</a>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span></div>
+
+
+<div class="viewcode-block" id="Astroide.y">
+<a class="viewcode-back" href="../astroide.html#astroide.Astroide.y">[docs]</a>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span></div>
+
+
+<div class="viewcode-block" id="Astroide.annonce_courbe">
+<a class="viewcode-back" href="../astroide.html#astroide.Astroide.annonce_courbe">[docs]</a>
+    <span class="k">def</span> <span class="nf">annonce_courbe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Annonce de la courbe à tracer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s2">&quot;La courbe étudiée ici est&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">MathTex</span><span class="p">(</span>
+            <span class="s2">&quot;t </span><span class="se">\\</span><span class="s2">mapsto&quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s2">&quot;x(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;y(t)&quot;</span><span class="p">])</span> <span class="o">+</span>
+            <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">cos^3(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">sin^3(t)&quot;</span><span class="p">])</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt1</span><span class="p">,</span>
+            <span class="n">txt2</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;Comme $M(t+2</span><span class="se">\\</span><span class="s2">pi) = M(t)$,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt3</span><span class="p">,</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;on l&#39;étudie sur $[-</span><span class="se">\\</span><span class="s2">pi, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">),</span>
+            <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="Astroide.variations">
+<a class="viewcode-back" href="../astroide.html#astroide.Astroide.variations">[docs]</a>
+    <span class="k">def</span> <span class="nf">variations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;$x$ est décroissante sur $[0, </span><span class="si">{</span><span class="n">PI_4</span><span class="si">}</span><span class="s2">]$.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;$y$ est croissante sur $[0, </span><span class="si">{PI_4}</span><span class="s2">]$,&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Courbes paramétrées en manim</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../demarage.html">Construction de courbes paramétrées avec manim.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../construction_courbe.html">Le module principal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Index des modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exemples.html">Exemples commentés</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tex_commands.html">Commandes LaTeX</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Code du module</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Recherche rapide</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Antoine Louatron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+
+<html lang="fr" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Exemples commentés &#8212; Documentation Courbes paramétrées en manim 0.3</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b3523f8e" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=3c051f90"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=d99ca74e"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Recherche" href="search.html" />
+    <link rel="next" title="Index des modules" href="modules.html" />
+    <link rel="prev" title="Construction de courbes paramétrées avec manim." href="demarage.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="exemples-commentes">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">Exemples commentés</a><a class="headerlink" href="#exemples-commentes" title="Link to this heading">¶</a></h1>
+<nav class="contents" id="table-des-matieres">
+<p class="topic-title">Table des matières</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#exemples-commentes" id="id1">Exemples commentés</a></p>
+<ul>
+<li><p><a class="reference internal" href="#une-courbe-regulieres" id="id2">Une courbe régulières</a></p></li>
+<li><p><a class="reference internal" href="#des-points-singuliers" id="id3">Des points singuliers</a></p></li>
+<li><p><a class="reference internal" href="#des-asymptotes-et-un-tableau-de-variations" id="id4">Des asymptotes et un tableau de variations</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="une-courbe-regulieres">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Une courbe régulières</a><a class="headerlink" href="#une-courbe-regulieres" title="Link to this heading">¶</a></h2>
+<p>Examinons l’exemple de <a class="reference internal" href="lissajous.html#lissajous.Lissajous" title="lissajous.Lissajous"><code class="xref py py-class docutils literal notranslate"><span class="pre">lissajous.Lissajous</span></code></a>.</p>
+<dl class="simple">
+<dt>On utilise :</dt><dd><ul class="simple">
+<li><p>des exemples de tracé de points</p></li>
+<li><p>des symétries</p></li>
+<li><p>des tangentes aux points réguliers</p></li>
+</ul>
+</dd>
+<dt>On surcharge les méthodes :</dt><dd><ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">intro()</span></code> pour annoncer <cite>quelques_points</cite></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">annonce_courbe()</span></code> et <code class="xref py py-meth docutils literal notranslate"><span class="pre">variations()</span></code> comme dans le contrat</p></li>
+</ul>
+</dd>
+<dt>Les paramètres utilisés pour le tracé final sont déterminés par les symétries données.</dt><dd><ul class="simple">
+<li><p>l’ordre des symétries est important, on les liste dans le code dans l’odre où on les trouve.</p></li>
+<li><p>l’intervalle <cite>p_range</cite> passé en argument de <code class="xref py py-class docutils literal notranslate"><span class="pre">Symetrie</span></code> est utilisé pour le tracé seulement pour la dernière symétrie, le reste du tracé est déduit en transformant les <cite>p_range</cite> par l’argument <cite>transforme</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">manim</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">construction_courbe</span> <span class="kn">import</span> <span class="n">PasAPas</span><span class="p">,</span> <span class="n">Symetrie</span><span class="p">,</span> <span class="n">Tangente</span>
+
+<span class="k">class</span> <span class="nc">Lissajous</span><span class="p">(</span><span class="n">PasAPas</span><span class="p">):</span>
+
+    <span class="c1"># on place 3 points en préambule</span>
+    <span class="c1"># pour illustrer l&#39;interprétation de x et y</span>
+    <span class="n">PARAMS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">LEGENDES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">DOWN</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">LEFT</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="n">UP</span><span class="o">/</span><span class="mi">2</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">DOWN</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">LEFT</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="n">UP</span><span class="o">/</span><span class="mi">2</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">UP</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">RIGHT</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="n">DOWN</span><span class="o">/</span><span class="mi">2</span><span class="p">}</span>
+    <span class="p">]</span> <span class="c1">#positions des légendes pour les points</span>
+    <span class="n">TEXTES_POINTS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Text</span><span class="p">(</span><span class="s2">&quot;Plaçons M(0)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mf">3.2</span><span class="o">*</span><span class="n">UP</span><span class="o">+</span><span class="mi">3</span><span class="o">*</span><span class="n">RIGHT</span><span class="p">),</span>
+        <span class="c1"># placement dans la scene</span>
+        <span class="n">Text</span><span class="p">(</span><span class="s2">&quot;puis M(1)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mf">3.2</span><span class="o">*</span><span class="n">UP</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">RIGHT</span><span class="p">),</span>
+        <span class="n">Text</span><span class="p">(</span><span class="s2">&quot;et M(2)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mf">3.2</span><span class="o">*</span><span class="n">UP</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">RIGHT</span><span class="p">)</span>
+    <span class="p">]</span> <span class="c1"># textes affichés en haut</span>
+    <span class="c1"># présentation des symétries</span>
+    <span class="n">SYMETRIES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Symetrie</span><span class="p">(</span>
+            <span class="c1">#transforme</span>
+            <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="o">-</span><span class="n">t</span><span class="p">,</span>
+            <span class="c1">#sym_M, retourne M(-t)</span>
+            <span class="k">lambda</span> <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">]),</span>
+            <span class="c1"># texte à afficher dans M(...)</span>
+            <span class="s2">&quot;-t&quot;</span><span class="p">,</span>
+            <span class="c1">#deux paramètres pour animer M(t) et M(-t)</span>
+            <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="c1"># presentation, mise à l&#39;échelle et placement</span>
+            <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;On a $M(-t) = </span><span class="se">\\</span><span class="s2">begin</span><span class="si">{pmatrix}</span><span class="s2">x(t) </span><span class="se">\\\\</span><span class="s2"> -y(t) </span><span class="se">\\</span><span class="s2">end</span><span class="si">{pmatrix}</span><span class="s2">$&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="c1"># conclusion</span>
+            <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;M(-t) est le symétrique de M(t) par rapport à (Ox)&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="c1"># les intervalles</span>
+            <span class="p">[</span><span class="s2">&quot;$[-</span><span class="se">\\</span><span class="s2">pi, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">,</span> <span class="s2">&quot;$[0, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">,</span> <span class="s2">&quot;$[-</span><span class="se">\\</span><span class="s2">pi, 0]$&quot;</span><span class="p">],</span>
+            <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="c1"># p_range</span>
+            <span class="n">couleur</span><span class="o">=</span><span class="n">BLUE_B</span>
+        <span class="p">),</span>
+        <span class="n">Symetrie</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">t</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">M</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">]),</span>
+            <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">pi-t$&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;On a $M(</span><span class="se">\\</span><span class="s2">pi-t) = </span><span class="se">\\</span><span class="s2">begin</span><span class="si">{pmatrix}</span><span class="s2">-x(t) </span><span class="se">\\\\</span><span class="s2"> -y(t) </span><span class="se">\\</span><span class="s2">end</span><span class="si">{pmatrix}</span><span class="s2">$&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;$M(</span><span class="se">\\</span><span class="s2">pi-t)$ est le symétrique de M(t) par rapport à O&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">PasAPas</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">),</span>
+            <span class="p">[</span><span class="s2">&quot;$[0, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">,</span> <span class="s2">&quot;$[0, </span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{2}</span><span class="s2">]$&quot;</span><span class="p">,</span> <span class="s2">&quot;$[</span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{2}</span><span class="s2">, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">],</span>
+            <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span>
+            <span class="n">couleur</span><span class="o">=</span><span class="n">GREEN_B</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">POINTS_REGULIERS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="c1"># au paramètre 0</span>
+            <span class="n">Tangente</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+            <span class="c1"># la tangente en 0 est dirigée par (0, 2) et on trace</span>
+            <span class="c1"># (0, 2/5) dans le repère</span>
+        <span class="p">),</span>
+        <span class="p">(</span>
+            <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{4}</span><span class="s2">$&quot;</span><span class="p">,</span>
+            <span class="n">Tangente</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="p">(</span>
+            <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{2}</span><span class="s2">$&quot;</span><span class="p">,</span>
+            <span class="n">Tangente</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">intro</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">intro</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span>
+            <span class="s2">&quot;Rappelons tout d&#39;abord l&#39;interprétation&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;graphique des fonctions coordonnées.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;On note M(t) le point de paramètre t.&quot;</span><span class="p">,</span>
+            <span class="n">alignment</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">annonce_courbe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Annonce de la courbe à tracer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># self.TEXT_DROITE est la position en haut de la colonne de droite</span>
+        <span class="c1"># une fois le repère déplacé. Attention à la longueur du texte.</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span>
+            <span class="s2">&quot;La courbe étudiée ici est&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span>
+        <span class="c1"># MathTex insère les $ automatiquement</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">MathTex</span><span class="p">(</span>
+            <span class="s2">&quot;t </span><span class="se">\\</span><span class="s2">mapsto</span><span class="se">\\</span><span class="s2">begin</span><span class="si">{pmatrix}</span><span class="s2">x(t) </span><span class="se">\\\\</span><span class="s2"> y(t)</span><span class="se">\\</span><span class="s2">end</span><span class="si">{pmatrix}</span><span class="s2">&quot;</span> <span class="o">+</span>
+            <span class="s2">&quot;= </span><span class="se">\\</span><span class="s2">begin</span><span class="si">{pmatrix}</span><span class="se">\\</span><span class="s2">cos(t) </span><span class="se">\\\\</span><span class="s2"> </span><span class="se">\\</span><span class="s2">sin(2t)</span><span class="se">\\</span><span class="s2">end</span><span class="si">{pmatrix}</span><span class="s2">&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span> <span class="c1"># placement en dessous.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt1</span><span class="p">,</span>
+            <span class="n">txt2</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;Comme $M(t+2</span><span class="se">\\</span><span class="s2">pi) = M(t)$,&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt3</span><span class="p">,</span>
+            <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;on l&#39;étudie sur $[-</span><span class="se">\\</span><span class="s2">pi, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">),</span>
+            <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">variations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Présentation rapide des variations, on se passe de</span>
+<span class="sd">        self.tableau_variations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;$x$ est décroissante sur $[0, </span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{2}</span><span class="s2">]$.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;$y$ est croissante sur $[0, </span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{4}</span><span class="s2">]$,&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt2</span><span class="p">,</span>
+            <span class="n">Tex</span><span class="p">(</span>
+                <span class="s2">&quot;puis décroissante sur $[</span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{4}</span><span class="s2">, </span><span class="se">\\</span><span class="s2">frac{</span><span class="se">\\</span><span class="s2">pi}</span><span class="si">{2}</span><span class="s2">]$&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">),</span>
+            <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Le résultat en image</p>
+<center><video controls=""
+preload="metadata"
+poster="https://prepa.blaise-pascal.fr/media/images/23-24/math/lissajous_coupe.png">
+<source src="https://prepa.blaise-pascal.fr/media/videos/23-24/Lissajous.mp4" type="video/mp4">
+<source src="https://prepa.blaise-pascal.fr/media/videos/23-24/Lissajous.webm" type="video/webm">
+<p>Votre navigateur ne permet pas la lecture de vidéo.Mais vous pouvez
+<a href="https://prepa.blaise-pascal.fr/media/videos/23-24/Lissajous.mp4">télécharger</a> celle ci.
+</p></video></center></section>
+<section id="des-points-singuliers">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Des points singuliers</a><a class="headerlink" href="#des-points-singuliers" title="Link to this heading">¶</a></h2>
+<p>En plus de l’introduction des points singuliers, on utilise ici
+un module <a class="reference internal" href="tex_commands.html"><span class="doc">d’utilitaires LaTeX</span></a> : <code class="xref py py-mod docutils literal notranslate"><span class="pre">tex_commands.py</span></code></p>
+<p>La courbe exemple est une astroïde. Le code donné ci dessous omet les symétries.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">manim</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">import</span> <span class="nn">construction_courbe</span> <span class="k">as</span> <span class="nn">cc</span>
+<span class="kn">import</span> <span class="nn">tex_commands</span> <span class="k">as</span> <span class="nn">tc</span>
+
+<span class="c1"># deux chaînes utiles pour la suite, utilisées dans des</span>
+<span class="c1"># f-string</span>
+<span class="n">PI_2</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">pi&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">PI_4</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">pi&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Astroide</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="p">):</span>
+    <span class="n">POINTS_REGULIERS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">PI_4</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">,</span>
+            <span class="n">cc</span><span class="o">.</span><span class="n">Tangente</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+                <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">POINTS_SINGULIERS</span> <span class="o">=</span> <span class="p">[</span> <span class="c1"># étude d&#39;un point singulier</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">PointSingulier</span><span class="p">(</span>
+            <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="c1"># en 0</span>
+            <span class="n">cc</span><span class="o">.</span><span class="n">Tangente</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="mi">15</span><span class="p">),</span>
+            <span class="mi">2</span><span class="p">,</span> <span class="c1"># p = 2</span>
+            <span class="mi">3</span><span class="p">,</span> <span class="c1"># q = 3</span>
+            <span class="n">cc</span><span class="o">.</span><span class="n">POINT_REBROUSSEMENT1</span> <span class="c1"># type du point</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span>
+
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span>
+
+    <span class="k">def</span> <span class="nf">annonce_courbe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Annonce de la courbe à tracer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s2">&quot;La courbe étudiée ici est&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">MathTex</span><span class="p">(</span>
+            <span class="s2">&quot;t </span><span class="se">\\</span><span class="s2">mapsto&quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s2">&quot;x(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;y(t)&quot;</span><span class="p">])</span> <span class="o">+</span>
+            <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">cos^3(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">sin^3(t)&quot;</span><span class="p">])</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt1</span><span class="p">,</span>
+            <span class="n">txt2</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;Comme $M(t+2</span><span class="se">\\</span><span class="s2">pi) = M(t)$,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt3</span><span class="p">,</span>
+            <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;on l&#39;étudie sur $[-</span><span class="se">\\</span><span class="s2">pi, </span><span class="se">\\</span><span class="s2">pi]$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">),</span>
+            <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">variations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;$x$ est décroissante sur $[0, </span><span class="si">{</span><span class="n">PI_4</span><span class="si">}</span><span class="s2">]$.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;$y$ est croissante sur $[0, </span><span class="si">{PI_4}</span><span class="s2">]$,&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>qui nous donne</p>
+<center><video controls=""
+preload="metadata"
+poster="https://prepa.blaise-pascal.fr/media/images/23-24/math/Astroide_coupe.png">
+<source src="https://prepa.blaise-pascal.fr/media/videos/23-24/Astroide.mp4" type="video/mp4">
+<source src="https://prepa.blaise-pascal.fr/media/videos/23-24/Astroide.webm" type="video/webm">
+<p>Votre navigateur ne permet pas la lecture de vidéo. Mais vous pouvez
+<a href="https://prepa.blaise-pascal.fr/media/videos/23-24/Astroide.mp4">télécharger</a> celle ci.
+</p></video></center></section>
+<section id="des-asymptotes-et-un-tableau-de-variations">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Des asymptotes et un tableau de variations</a><a class="headerlink" href="#des-asymptotes-et-un-tableau-de-variations" title="Link to this heading">¶</a></h2>
+<p>On utilise cette fois pleinement le module <code class="xref py py-mod docutils literal notranslate"><span class="pre">tex_commands.py</span></code> pour le tracé d’un
+tableau de variations (dont le code est dans un fichier annexe). Pour cet exemple,
+on utilise le packages <cite>variations</cite> de LaTeX qui est ajouté au préambule par l’Utilisation
+de la classe <code class="xref py py-class docutils literal notranslate"><span class="pre">VTex</span></code>.</p>
+<p>Cette fois, les paramètres utilisés pour le tracé sont donné dans l’attribut <code class="xref py py-attr docutils literal notranslate"><span class="pre">P_RANGE</span></code>,
+sous forme d’une liste d’intervalle pour gérer les discontinuités.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fractions</span> <span class="kn">import</span> <span class="n">Fraction</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span> <span class="nn">manim</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">import</span> <span class="nn">construction_courbe</span> <span class="k">as</span> <span class="nn">cc</span>
+<span class="kn">import</span> <span class="nn">tex_commands</span> <span class="k">as</span> <span class="nn">tc</span>
+
+<span class="k">class</span> <span class="nc">VTex</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">MyTex</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utilisation du package variations en plus</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">packages</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">{variations}</span><span class="s2">&quot;</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">BranchesInfiniesExemple</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">PasAPas</span><span class="p">):</span>
+
+    <span class="n">SKIP</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">INTERVALLE_LEGENDE</span> <span class="o">=</span> <span class="mf">1.5</span>
+    <span class="n">X_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">4.8</span><span class="p">,</span><span class="mf">8.2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">Y_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">5.2</span><span class="p">,</span> <span class="mf">5.2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">P_RANGE</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span>
+    <span class="n">POINTS_REGULIERS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="n">cc</span><span class="o">.</span><span class="n">Tangente</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="n">cc</span><span class="o">.</span><span class="n">Tangente</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="p">]</span>
+    <span class="n">ASYMPOTES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">AsymptoteHorizontale</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">AsymptoteVerticale</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)),</span>
+        <span class="n">cc</span><span class="o">.</span><span class="n">Asymptote</span><span class="p">([</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)])</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">annonce_courbe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Annonce de la courbe à tracer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span>
+            <span class="s2">&quot;La courbe étudiée ici est&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TEXT_DROITE</span><span class="p">)</span>
+        <span class="n">courbe</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;t^2&quot;</span><span class="p">,</span> <span class="s2">&quot;t - 1&quot;</span><span class="p">),</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="s2">&quot;t^2 - 1&quot;</span><span class="p">)])</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">MathTex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;t </span><span class="se">\\</span><span class="s2">mapsto </span><span class="si">{</span><span class="n">tc</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([</span><span class="s1">&#39;x(t)&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;y(t)&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">courbe</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span>
+            <span class="n">txt1</span><span class="p">,</span>
+            <span class="n">txt2</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;Cette courbe ne présente pas de symétrie.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">tableau_variations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annonce_episode</span><span class="p">(</span><span class="s2">&quot;Étude des variations&quot;</span><span class="p">,</span> <span class="n">repere_fin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">cases</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Env</span><span class="p">(</span><span class="s2">&quot;cases&quot;</span><span class="p">)</span>
+        <span class="n">x_prime</span> <span class="o">=</span> <span class="s2">&quot;x&#39;(t) = &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;t(t - 2)&quot;</span><span class="p">,</span> <span class="s2">&quot;(t - 1)^2&quot;</span><span class="p">)</span>
+        <span class="n">y_prime</span> <span class="o">=</span> <span class="s2">&quot;y&#39;(t) = &quot;</span> <span class="o">+</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;-t^2 - 1&quot;</span><span class="p">,</span> <span class="s2">&quot;(t^2 - 1)^2&quot;</span><span class="p">)</span>
+        <span class="n">txt1</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;On trouve après dérivation : &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt1</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;$&quot;</span> <span class="o">+</span> <span class="n">cases</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x_prime</span><span class="si">}</span><span class="s2"> </span><span class="se">\\\\</span><span class="s2"> </span><span class="si">{</span><span class="n">y_prime</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;$&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt1</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.2</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;Les limites ne sont pas indéterminées,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">txt4</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;et on obtient le tableau suivant&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt4</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">dossier_courant</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span>
+        <span class="c1"># c&#39;est pénible d&#39;écrire du latex dans une fichier python.</span>
+        <span class="c1"># On lit un fichier externe</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dossier_courant</span> <span class="o">/</span> <span class="s2">&quot;variations_bi_exemple.tex&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">variations</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">txt5</span> <span class="o">=</span> <span class="n">VTex</span><span class="p">(</span><span class="n">variations</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tableau</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span><span class="n">txt5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+        <span class="c1"># self.interactive_embed()</span>
+        <span class="c1"># mise en évidence des points à étudier.</span>
+        <span class="c1"># Les positions ont été trouvées grace à la ligne</span>
+        <span class="c1"># commentée du dessus qui fonctionne seulement avec openGL</span>
+        <span class="n">points_reguliers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Ellipse</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mf">1.8</span> <span class="o">+</span> <span class="n">LEFT</span><span class="o">*</span><span class="mf">0.05</span><span class="p">),</span>
+            <span class="n">Ellipse</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mf">1.8</span> <span class="o">+</span> <span class="n">RIGHT</span><span class="o">*</span><span class="mf">4.05</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tableau</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">*</span><span class="n">points_reguliers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">pr</span><span class="p">)</span> <span class="k">for</span> <span class="n">pr</span> <span class="ow">in</span> <span class="n">points_reguliers</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">branches</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Circle</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">BLUE_B</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mf">2.35</span> <span class="o">+</span> <span class="n">LEFT</span><span class="o">*</span><span class="mf">4.5</span><span class="p">),</span>
+            <span class="n">Circle</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">BLUE_B</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mf">2.35</span> <span class="o">+</span> <span class="n">LEFT</span><span class="o">*</span><span class="mf">2.2</span><span class="p">),</span>
+            <span class="n">Circle</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">BLUE_B</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mf">2.35</span> <span class="o">+</span> <span class="n">RIGHT</span><span class="o">*</span><span class="mi">2</span><span class="p">),</span>
+            <span class="n">Circle</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">BLUE_B</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mf">2.35</span> <span class="o">+</span> <span class="n">RIGHT</span><span class="o">*</span><span class="mf">5.7</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tableau</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">*</span><span class="n">branches</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">FadeIn</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">branches</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="c1"># on anime autour du point central du tableau de variations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">about_point</span><span class="o">=</span><span class="n">txt5</span><span class="o">.</span><span class="n">get_center</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tableau</span>
+            <span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">animate</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tableau</span><span class="p">])</span>
+        <span class="c1"># conclusion</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;On étudie 2 points réguliers,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt5</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;et 4 branches infinies.&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">FadeOut</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">branches</span> <span class="o">+</span> <span class="n">points_reguliers</span><span class="p">])</span>
+    
+    <span class="k">def</span> <span class="nf">asymptotes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="s2">&quot;Rappelons tout d&#39;abord les variations.&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="c1"># affichage des variations et des points d&#39;étude</span>
+        <span class="n">groupe</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">DOWN</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span> <span class="c1"># translation ves le bas</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tableau</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="o">*</span><span class="n">groupe</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;Lorsque $t </span><span class="se">\\</span><span class="s2">to </span><span class="se">\\</span><span class="s2">pm </span><span class="se">\\</span><span class="s2">infty$, l&#39;étude est immédiate,&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;on obtient une </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ASYMPOTES</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">texte</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;Lorsque $t </span><span class="se">\\</span><span class="s2">to -1$, l&#39;étude est immédiate,&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">txt4</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;on obtient une </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ASYMPOTES</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">texte</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">txt2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">txt4</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># étude en 1</span>
+        <span class="n">point_lim</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Tend</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+        <span class="n">limites</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Env</span><span class="p">(</span><span class="s2">&quot;cases&quot;</span><span class="p">)(</span>
+            <span class="sa">f</span><span class="s2">&quot;x(t) </span><span class="si">{</span><span class="n">point_lim</span><span class="si">}</span><span class="s2"> </span><span class="se">\\</span><span class="s2">mp</span><span class="se">\\</span><span class="s2">infty </span><span class="se">\\\\</span><span class="s2"> y(t) </span><span class="si">{</span><span class="n">point_lim</span><span class="si">}</span><span class="s2"> </span><span class="se">\\</span><span class="s2">mp</span><span class="se">\\</span><span class="s2">infty&quot;</span>
+        <span class="p">)</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;En revanche on a $</span><span class="si">{</span><span class="n">limites</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">demi</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">quotient</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;x(t)&quot;</span><span class="p">,</span> <span class="s2">&quot;y(t)&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">point_lim</span> <span class="o">+</span> <span class="n">demi</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Après calcul, on trouve que $</span><span class="si">{</span><span class="n">quotient</span><span class="si">}</span><span class="s2">$.&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Nous devons donc étudier la limite de $y(t) - </span><span class="si">{</span><span class="n">demi</span><span class="si">}</span><span class="s2">x(t)$ en 1.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">txt3</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mf">1.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="s2">&quot;t(t+2)&quot;</span><span class="p">,</span> <span class="s2">&quot;2(t+1)&quot;</span><span class="p">)</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;On calcule cette différence par mise au même dénominateur,&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">UP</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">txt2</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="s2">&quot;et après factorisation des polynômes on trouve que&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">val_lim</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">Frac</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">txt3</span> <span class="o">=</span> <span class="n">MathTex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;y(t) - </span><span class="si">{</span><span class="n">demi</span><span class="si">}</span><span class="s2">x(t) = -</span><span class="si">{</span><span class="n">diff</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">point_lim</span><span class="si">}</span><span class="s2"> -</span><span class="si">{</span><span class="n">val_lim</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="n">txt4</span> <span class="o">=</span> <span class="n">Tex</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;On obtient une </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ASYMPOTES</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">texte</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">next_to</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">DOWN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt2</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt3</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affiche_texte</span><span class="p">(</span><span class="n">txt4</span><span class="p">,</span> <span class="n">remplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">INTERVALLE_LEGENDE</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efface_textes</span><span class="p">()</span>
+        <span class="c1"># super().asymptotes s&#39;occupe des annonces et du tracé des asymptotes</span>
+        <span class="c1"># données dans self.ASYMPTOTES</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">asymptotes</span><span class="p">()</span>
+</pre></div>
+</div>
+<center><video controls=""
+preload="metadata"
+poster="https://prepa.blaise-pascal.fr/media/images/23-24/math/BranchesInfiniesExemple_coupe.png">
+<source src="https://prepa.blaise-pascal.fr/media/videos/23-24/BranchesInfiniesExemple.mp4" type="video/mp4">
+<source src="https://prepa.blaise-pascal.fr/media/videos/23-24/BranchesInfiniesExemple.webm" type="video/webm">
+<p>Votre navigateur ne permet pas la lecture de vidéo. Mais vous pouvez
+<a href="https://prepa.blaise-pascal.fr/media/videos/23-24/BranchesInfiniesExemple.mp4">télécharger</a> celle ci.
+</p></video></center></section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Courbes paramétrées en manim</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="demarage.html">Construction de courbes paramétrées avec manim.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="construction_courbe.html">Le module principal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Index des modules</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Exemples commentés</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tex_commands.html">Commandes LaTeX</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="demarage.html">Construction de courbes paramétrées avec manim.</a><ul>
+      <li>Previous: <a href="demarage.html" title="Chapitre précédent">Construction de courbes paramétrées avec manim.</a></li>
+      <li>Next: <a href="modules.html" title="Chapitre suivant">Index des modules</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Recherche rapide</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Antoine Louatron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/exemples.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

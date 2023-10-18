@@ -1,0 +1,19 @@
+Les flags pour la ligne de commande
+p pour play
+ql low quality
+qh high quality
+s pour générer seulement l'image de fin
+
+spécifier la Scene en plus si le fichier en contient plusieurs
+
+Par exemple:
+manim -pql astroide.py  # pour compiler en basse qualité et débugger
+manim -qh --format=webm astroid.py # haute qualité au format webm. Très long
+
+
+Pour utiliser self.interactive_embed() qui permet de modifier une scene à la volée à un instant choisi
+manim -ql --renderer=opengl astroide.py
+
+
+Pour générer une image de la fin de la vidéo
+manim -sql astroide.py
